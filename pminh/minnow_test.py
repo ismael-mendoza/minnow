@@ -7,6 +7,7 @@ import struct
 import bit
 import time
 
+
 def create_int_record(fname, text, xs):
     f = minnow.create(fname)
 
@@ -19,23 +20,25 @@ def create_int_record(fname, text, xs):
 
     f.close()
 
+
 def create_group_record(fname, ix, fx, text):
     f = minnow.create(fname)
 
-    ni, nf = len(ix)//4, len(fx)//2
+    ni, nf = len(ix) // 4, len(fx) // 2
     f.header(struct.pack("<qq", 4, ni))
     f.fixed_size_group(np.int32, ni)
     for i in range(4):
-        f.data(ix[i*ni: (i+1)*ni])
+        f.data(ix[i * ni: (i + 1) * ni])
 
     f.header(struct.pack("<qq", 2, nf))
     f.fixed_size_group(np.float64, nf)
     for i in range(2):
-        f.data(fx[i*nf: (i+1)*nf])
+        f.data(fx[i * nf: (i + 1) * nf])
 
     f.header(text)
 
     f.close()
+
 
 def read_int_record(fname):
     f = minnow.open(fname)
@@ -44,9 +47,10 @@ def read_int_record(fname):
     text = f.header(1, "s")
     lengths = f.header(2, np.int64)
 
-    xs = [f.data(i) for i in range(blocks)] 
+    xs = [f.data(i) for i in range(blocks)]
 
     return text, xs
+
 
 def read_group_record(fname):
     f = minnow.open(fname)
@@ -55,15 +59,16 @@ def read_group_record(fname):
     bf, nf = f.header(1, "qq")
     text = f.header(2, "s")
 
-    xi = np.zeros(ni*bi, dtype=np.int64)
-    xf = np.zeros(nf*bf, dtype=np.float32)
+    xi = np.zeros(ni * bi, dtype=np.int64)
+    xf = np.zeros(nf * bf, dtype=np.float32)
     for i in range(bi):
-        xi[i*ni: (i+1)*ni] = f.data(i)
+        xi[i * ni: (i + 1) * ni] = f.data(i)
     for i in range(bf):
-        xf[i*nf: (i+1)*nf] = f.data(i + bi)
+        xf[i * nf: (i + 1) * nf] = f.data(i + bi)
 
     return xi, xf, text
-    
+
+
 def test_int_record():
     fname = "../test_files/int_record.test"
     xs = [np.array([1, 2, 3, 4], dtype=np.int64),
@@ -75,9 +80,10 @@ def test_int_record():
     create_int_record(fname, text, xs)
     rd_text, rd_xs = read_int_record(fname)
 
-    assert(rd_text == text.decode("ascii"))
+    assert (rd_text == text.decode("ascii"))
     for i in range(len(xs)):
-        assert(np.all(xs[i] == rd_xs[i]))
+        assert (np.all(xs[i] == rd_xs[i]))
+
 
 def test_group_record():
     fname = "../test_files/group_files.test"
@@ -87,20 +93,22 @@ def test_group_record():
 
     create_group_record(fname, ix, fx, text)
     rd_ix, rd_fx, rd_text = read_group_record(fname)
-    
-    assert(text.decode("ascii") == rd_text)
-    assert(np.all(rd_ix == ix))
-    assert(np.all(np.abs(fx - rd_fx) < 1e-6))
+
+    assert (text.decode("ascii") == rd_text)
+    assert (np.all(rd_ix == ix))
+    assert (np.all(np.abs(fx - rd_fx) < 1e-6))
+
 
 def test_bit_array():
     bits = np.arange(7, 64, dtype=np.int)
 
-    x = np.arange(100, dtype=np.int) 
+    x = np.arange(100, dtype=np.int)
 
     for b in bits:
         arr = bit.array(b, x)
         y = bit.from_array(arr, b, len(x))
-        assert(np.all(x == y))
+        assert (np.all(x == y))
+
 
 def bench_bit_array():
     x = np.arange(100000, dtype=np.uint64) % 100
@@ -112,7 +120,7 @@ def bench_bit_array():
             bit.array(bits, x)
         t1 = time.time()
         dt = (t1 - t0) / N
-        print("%d bits: %g MB/s" % (bits,  (8*len(x)/ dt) / 1e6))
+        print("%d bits: %g MB/s" % (bits, (8 * len(x) / dt) / 1e6))
 
 
 def write_bit_int_record(fname, x1, x2, x3):
@@ -130,18 +138,20 @@ def write_bit_int_record(fname, x1, x2, x3):
 
     f.close()
 
+
 def read_bit_int_record(fname):
     f = minnow.open(fname)
-    
+
     x2_len = f.header(0, np.int64)
     x1 = f.data(0)
-    x2 = [None]*x2_len
+    x2 = [None] * x2_len
     for i in range(x2_len): x2[i] = f.data(1 + i)
     x3 = f.data(x2_len + 1)
 
     f.close()
 
     return x1, x2, x3
+
 
 def test_bit_int_record():
     fname = "../test_files/bit_int_record.test"
@@ -151,11 +161,12 @@ def test_bit_int_record():
 
     write_bit_int_record(fname, x1, x2, x3)
     rd_x1, rd_x2, rd_x3 = read_bit_int_record(fname)
-    
-    assert(np.all(x1 == rd_x1))
-    assert(np.all(rd_x2[0] == x2[0]))
-    assert(np.all(rd_x2[1] == x2[1]))
-    assert(np.all(rd_x3 == x3))
+
+    assert (np.all(x1 == rd_x1))
+    assert (np.all(rd_x2[0] == x2[0]))
+    assert (np.all(rd_x2[1] == x2[1]))
+    assert (np.all(rd_x3 == x3))
+
 
 def create_q_float_record(fname, limit, dx1, dx2, x1, x2):
     f = minnow.create(fname)
@@ -169,11 +180,12 @@ def create_q_float_record(fname, limit, dx1, dx2, x1, x2):
 
     f.close()
 
+
 def open_q_float_record(fname):
     f = minnow.open(fname)
-    
+
     dx1, dx2, low, high, x1_len, x2_len = f.header(0, "ffffqq")
-    x1, x2 = [None]*x1_len, [None]*x2_len
+    x1, x2 = [None] * x1_len, [None] * x2_len
     for i1 in range(x1_len):
         x1[i1] = f.data(i1)
     for i2 in range(x2_len):
@@ -182,6 +194,7 @@ def open_q_float_record(fname):
     f.close()
 
     return x1, x2
+
 
 def test_q_float_record():
     fname = "../test_files/q_float_record.test"
@@ -200,18 +213,19 @@ def test_q_float_record():
     create_q_float_record(fname, limit, dx1, dx2, x1, x2)
     rd_x1, rd_x2 = open_q_float_record(fname)
 
-    assert(len(x1) == len(rd_x1))
+    assert (len(x1) == len(rd_x1))
     for i in range(len(x1)):
-        assert(len(x1[i]) == len(rd_x1[i]))
-        assert(np.all(eps_eq(x1[i], rd_x1[i], dx1)))
+        assert (len(x1[i]) == len(rd_x1[i]))
+        assert (np.all(eps_eq(x1[i], rd_x1[i], dx1)))
 
-    assert(len(x2) == len(rd_x2))
+    assert (len(x2) == len(rd_x2))
     for i in range(len(x2)):
-        assert(len(x2[i]) == len(rd_x2[i]))
-        assert(np.all(eps_eq(x2[i], rd_x2[i], dx2)))
-    
+        assert (len(x2[i]) == len(rd_x2[i]))
+        assert (np.all(eps_eq(x2[i], rd_x2[i], dx2)))
+
 
 def eps_eq(x, y, eps): return (x + eps > y) & (x - eps < y)
+
 
 def test_periodic_min():
     pixels = 20
@@ -226,7 +240,8 @@ def test_periodic_min():
 
     for i in range(len(data)):
         min = bit.periodic_min(data[i], pixels)
-        assert(min == mins[i])
+        assert (min == mins[i])
+
 
 def test_minh_reader_writer():
     fname = "../test_files/reader_writer_minh.test"
@@ -271,17 +286,17 @@ def test_minh_reader_writer():
 
     rd = minh.open(fname)
 
-    assert(rd.names == names)
-    assert(rd.text == text)
-    assert(rd.blocks == 2)
-    assert(rd.length == 8)
-    assert(rd.cells == 4)
-    assert(rd.boundary == 10.0)
-    assert(rd.L == 100.0)
+    assert (rd.names == names)
+    assert (rd.text == text)
+    assert (rd.blocks == 2)
+    assert (rd.length == 8)
+    assert (rd.cells == 4)
+    assert (rd.boundary == 10.0)
+    assert (rd.L == 100.0)
     for i in range(rd.blocks):
-        assert(rd.block_lengths[i] == [5, 3][i])
+        assert (rd.block_lengths[i] == [5, 3][i])
     for i in range(len(columns)):
-        assert(column_eq(columns[i], rd.columns[i]))
+        assert (column_eq(columns[i], rd.columns[i]))
 
     for b in range(len(blocks)):
         block = blocks[b]
@@ -290,39 +305,42 @@ def test_minh_reader_writer():
         else:
             rd_int64, rd_float32, rd_int, rd_float, rd_log = rd.read(names)
 
-        assert(len(rd_int64) == len(block[0]))
-        assert(np.all(rd_int64 == block[0]))
+        assert (len(rd_int64) == len(block[0]))
+        assert (np.all(rd_int64 == block[0]))
 
-        assert(len(rd_float32) == len(block[1]))
-        assert(np.all(eps_eq(rd_float32, block[1], 1e-3)))
+        assert (len(rd_float32) == len(block[1]))
+        assert (np.all(eps_eq(rd_float32, block[1], 1e-3)))
 
-        assert(len(rd_int) == len(block[2]))
-        assert(np.all(rd_int == block[2]))
+        assert (len(rd_int) == len(block[2]))
+        assert (np.all(rd_int == block[2]))
 
-        assert(len(rd_float) == len(block[3]))
-        assert(np.all(eps_eq(rd_float, block[3], 1)))
+        assert (len(rd_float) == len(block[3]))
+        assert (np.all(eps_eq(rd_float, block[3], 1)))
 
-        assert(len(rd_log) == len(block[4]))
-        assert(np.all(eps_eq(np.log10(rd_log), np.log10(block[4]), 0.01)))
+        assert (len(rd_log) == len(block[4]))
+        assert (np.all(eps_eq(np.log10(rd_log), np.log10(block[4]), 0.01)))
+
 
 def column_eq(c1, c2):
-    return (c1.type == c2.type and c1.log == c2.log and 
+    return (c1.type == c2.type and c1.log == c2.log and
             eps_eq(c1.dx, c2.dx, 1e-5) and
             eps_eq(c1.low, c2.low, 1e-5) and
             eps_eq(c1.high, c2.high, 1e-5))
+
 
 def test_origin():
     fname = "../test_files/reader_writer_minh.test"
     rd = minh.open(fname)
     rd.boundary, rd.cells, rd.L = 10.0, 5, 100.0
 
-    assert(rd.cell_width() == 20.0)
-    assert(rd.block_width() == 40.0)
-    assert(np.all(rd.cell_origin(25 + 5 + 1) == np.array([20, 20, 20])))
-    assert(np.all(rd.block_origin(25 + 5 + 1) == np.array([10, 10, 10])))
-    assert(np.all(rd.cell_origin(0) == np.array([0, 0, 0])))
-    assert(np.all(rd.block_origin(0) == np.array([90, 90, 90])))
-    
+    assert (rd.cell_width() == 20.0)
+    assert (rd.block_width() == 40.0)
+    assert (np.all(rd.cell_origin(25 + 5 + 1) == np.array([20, 20, 20])))
+    assert (np.all(rd.block_origin(25 + 5 + 1) == np.array([10, 10, 10])))
+    assert (np.all(rd.cell_origin(0) == np.array([0, 0, 0])))
+    assert (np.all(rd.block_origin(0) == np.array([90, 90, 90])))
+
+
 def test_normalize():
     L, width, origin = 100.0, 20.0, np.array([0, 50, 90], dtype=float)
     x = np.array([-1, 99, 5, 15, 21], dtype=float)
@@ -334,7 +352,7 @@ def test_normalize():
     out = np.array([0, 0, 5, 15, 20])
 
     for k in range(3):
-        assert(np.all(out == norm[k]))
+        assert (np.all(out == norm[k]))
 
     L, width, origin = 100.0, 70.0, np.array([90, 90, 90], dtype=float)
     x = np.array([90, 0, 20, 30, 50, 60], dtype=float)
@@ -343,7 +361,7 @@ def test_normalize():
 
     coord = np.array([x, y, z])
     norm = minh.normalize_coords(coord, L, origin, width)
-    assert(np.all(norm[0] == np.array([ 0, 10, 30, 40, 60, 70], dtype=float)))
+    assert (np.all(norm[0] == np.array([0, 10, 30, 40, 60, 70], dtype=float)))
 
     L, width, origin = 100.0, 70.0, np.array([40, 40, 40], dtype=float)
     x = np.array([40, 50, 60, 70, 80, 90, 0, 10], dtype=float)
@@ -352,7 +370,7 @@ def test_normalize():
 
     coord = np.array([x, y, z])
     norm = minh.normalize_coords(coord, L, origin, width)
-    assert(np.all(norm[0] == np.array([0, 10, 20, 30, 40, 50, 60, 70], dtype=float)))
+    assert (np.all(norm[0] == np.array([0, 10, 20, 30, 40, 50, 60, 70], dtype=float)))
 
 
 if __name__ == "__main__":
@@ -366,4 +384,4 @@ if __name__ == "__main__":
     test_origin()
     test_normalize()
 
-    #bench_bit_array()
+    # bench_bit_array()
