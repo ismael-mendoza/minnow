@@ -4,7 +4,7 @@
 from setuptools import setup
 
 setup(
-    name='gmodel',
+    name='pminh',
     version='0.1',
     description='A compression library for cosmological data',
     long_description='A compression library for cosmological data',
