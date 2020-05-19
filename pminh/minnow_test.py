@@ -1,11 +1,12 @@
 from __future__ import division, print_function
 
 import numpy as np
-import minnow
-import minh
 import struct
-import bit
 import time
+
+from . import minnow
+from . import minh
+from . import bit
 
 
 def create_int_record(fname, text, xs):

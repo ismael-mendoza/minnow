@@ -5,7 +5,7 @@ import numpy.random as random
 import struct
 import abc
 
-import bit
+from . import bit
 
 MAGIC = 0xacedad
 VERSION = 1
