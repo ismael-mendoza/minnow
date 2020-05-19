@@ -1,9 +1,9 @@
-import cy_bit
+from . import cy_bit
 import numpy as np
 
 
-def precision_needed(max):
-    return cy_bit.precision_needed(np.uint64(max))
+def precision_needed(mmax):
+    return cy_bit.precision_needed(np.uint64(mmax))
 
 
 def array_bytes(bits, length):
