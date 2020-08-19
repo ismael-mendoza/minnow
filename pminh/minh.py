@@ -6,22 +6,24 @@ import gc
 
 from . import minnow
 
-MAGIC = 0xbaff1ed
+MAGIC = 0xBAFF1ED
 VERSION = 0
 
 _basic_file_type = 0
 _boundary_file_type = 1
 
 _column_buf_size = 232
-_column_type = np.dtype([
-    ("type", np.int64),
-    ("log", np.int32),
-    ("low", np.float32),
-    ("high", np.float32),
-    ("dx", np.float32),
-    ("buf", "S%d" % _column_buf_size)
-])
-assert (_column_type.itemsize == 256)
+_column_type = np.dtype(
+    [
+        ("type", np.int64),
+        ("log", np.int32),
+        ("low", np.float32),
+        ("high", np.float32),
+        ("dx", np.float32),
+        ("buf", "S%d" % _column_buf_size),
+    ]
+)
+assert _column_type.itemsize == 256
 
 
 def create(fname):
@@ -66,15 +68,15 @@ class Writer(object):
         self.L, self.boundary, self.cells = L, boundary, cells
 
     def block(self, cols):
-        assert (len(cols) == len(self.cols))
+        assert len(cols) == len(self.cols)
         for i in range(len(cols)):
-            assert (minnow.type_match(self.cols[i].type, cols[i]))
+            assert minnow.type_match(self.cols[i].type, cols[i])
 
         self.block_sizes.append(len(cols[0]))
         self.blocks += 1
 
         for i in range(len(cols)):
-            assert (len(cols[i]) == len(cols[0]))
+            assert len(cols[i]) == len(cols[0])
             col_type = self.cols[i].type
 
             if minnow.int64_group <= col_type <= minnow.float32_group:
@@ -86,7 +88,8 @@ class Writer(object):
             elif col_type == minnow.float_group:
                 lim = (self.cols[i].low, self.cols[i].high)
                 buf = np.asarray(np.copy(cols[i]), dtype=np.float32)
-                if self.cols[i].log: np.log10(buf, out=buf)
+                if self.cols[i].log:
+                    np.log10(buf, out=buf)
                 buf[buf >= self.cols[i].high] = np.nextafter(
                     self.cols[i].high, np.float32(-np.inf), dtype=np.float32
                 )
@@ -107,8 +110,8 @@ class Reader(object):
         self.f = minnow.open(fname)
 
         magic, version, self.file_type = self.f.header(0, "qqq")
-        assert (magic == MAGIC)
-        assert (version == VERSION)
+        assert magic == MAGIC
+        assert version == VERSION
 
         self.text = self.f.header(1, "s")
         self.names = self.f.header(2, "s")
@@ -120,14 +123,22 @@ class Reader(object):
         self.columns = [None] * len(raw_columns)
         for i in range(len(raw_columns)):
             self.columns[i] = Column(
-                raw_columns["type"][i], raw_columns["log"][i],
-                raw_columns["low"][i], raw_columns["high"][i],
-                raw_columns["dx"][i]
+                raw_columns["type"][i],
+                raw_columns["log"][i],
+                raw_columns["low"][i],
+                raw_columns["high"][i],
+                raw_columns["dx"][i],
             )
 
         self.names = self.names.split("$")
 
         self.length = np.sum(self.block_lengths)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def is_boundary(self):
         return self.cells > 0
@@ -151,7 +162,7 @@ class Reader(object):
 
         for i in range(len(names)):
             c = self.names.index(names[i])
-            assert (c >= 0)
+            assert c >= 0
 
             if self.file_type == _basic_file_type:
                 idx = b * len(self.columns) + c
@@ -192,7 +203,8 @@ class Reader(object):
     def cell_width(self):
         """ cell_width returns the width of a cell without its boundary
         """
-        if not self.is_boundary(): return self.L
+        if not self.is_boundary():
+            return self.L
         return self.L / self.cells
 
 
