@@ -10,7 +10,7 @@ setup(
     long_description='A compression library for cosmological data',
     author='Phil Mansfield',
     author_email='',
-    url='https://github.com/phil-mansfield/minnow',
+    url='https://github.com/ismael-mendoza/minnow',
     packages=[
         'pminh',
     ],
