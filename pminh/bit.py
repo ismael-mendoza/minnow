@@ -1,5 +1,6 @@
-from . import cy_bit
 import numpy as np
+
+import pminh.cy_bit as cy_bit
 
 
 def precision_needed(mmax):

@@ -4,7 +4,7 @@ import struct
 import numpy as np
 import gc
 
-from . import minnow
+import pminh.minnow as minnow
 
 MAGIC = 0xBAFF1ED
 VERSION = 0
