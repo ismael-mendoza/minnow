@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
+from distutils.core import setup
+from Cython.Build import cythonize
+import numpy as np
 
 setup(
     name='pminh',
@@ -14,6 +17,8 @@ setup(
     packages=[
         'pminh',
     ],
+    ext_modules=cythonize("pminh/cy_bit.pyx"), 
+    include_dirs=[np.get_include()],
     python_requires='>=3.6',
     # scripts=[],
     # include_package_data=True,
